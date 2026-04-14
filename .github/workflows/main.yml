@@ -1,0 +1,27 @@
+name: Pipeline_EP1_DevOps
+
+on:
+  push:
+    branches: [ "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Compilar Juego
+        run: |
+          echo "Buscando archivos..."
+          # Esta ruta entra a todas tus carpetas hasta encontrar los .java
+          javac juego2d.zip/juego2d/juegazo/src/main/*.java -d .
+          echo "¡Compilación exitosa!"
