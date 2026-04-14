@@ -21,7 +21,7 @@ jobs:
 
       - name: Compilar Juego
         run: |
-          echo "Buscando archivos..."
-          # Esta ruta entra a todas tus carpetas hasta encontrar los .java
-          javac juego2d.zip/juego2d/juegazo/src/main/*.java -d .
+          echo "Compilando archivo Main.java raíz..."
+          # Compilamos el archivo que está suelto en la carpeta principal
+          javac Main.java
           echo "¡Compilación exitosa!"
