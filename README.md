@@ -65,10 +65,17 @@ Se utilizó **IA (Gemini/Claude)** para:
 
 ---
 
+Automatización con GitHub Actions (CI)
+"Para garantizar la calidad del software, se configuró un pipeline de Integración Continua que se dispara automáticamente ante cada push en la rama develop. El pipeline realiza las siguientes tareas: checkout del código, configuración del entorno Java JDK 17 y la compilación de los archivos fuente."
+
+<img width="887" height="727" alt="Captura de pantalla 2026-04-14 181327" src="https://github.com/user-attachments/assets/9bfaa4d3-3d2b-46fa-b3a0-3d57200ed8f7" />
+
+La imagen superior muestra el flujo de trabajo denominado Pipeline_EP1_DevOps ejecutado con éxito. El check verde confirma que el código presente en el repositorio es estable y compila correctamente bajo los estándares definidos en el archivo main.yml
+
 ## 6. Reflexión Individual
 
 ### [NATHAN GUTIERREZ]:
 "Durante esta actividad, comprendí la importancia de GitFlow para mantener el orden. El uso de ramas permite fallar y corregir sin afectar al usuario final en la rama main. La automatización con GitHub Actions es clave para asegurar que el código siempre compile."
 
 ### [CRISTOBAL REYES]:
-"[Escribe aquí la reflexión de tu compañero]."
+"Mi participación se centró en la lógica del videojuego y la organización del repositorio bajo el modelo GitFlow y Lograr que el pipeline de GitHub Actions compilara correctamente nuestro código en Java fue el mayor desafío y aprendizaje de esta etapa.."
