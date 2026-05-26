@@ -1,81 +1,89 @@
 # DevOps
-# EP1: Implementación de Pipeline de Integración Continua
+# EP2: Añadiéndole complejidad a nuestro pipeline
 
 ## 1. Descripción del Proyecto
-Este repositorio contiene un **Videojuego 2D desarrollado en Java** El proyecto ha sido estructurado siguiendo estándares de cultura DevOps, preparando el entorno para la integración continua (CI) y asegurando la colaboración eficiente mediante un modelo de ramificación controlado.
-**Tecnologías:** Java (Swing/AWT), Git, GitHub Actions.
+Este repositorio contiene un **Videojuego 2D desarrollado en Java**, extendido con un pipeline CI/CD completo que automatiza la integración, pruebas, análisis de seguridad y despliegue del microservicio mediante contenedores.
 
-
-## 2. Estrategia de Ramificación: GitFlow
-Se ha implementado el modelo de trabajo **GitFlow** para gestionar el ciclo de vida del desarrollo del videojuego
-<img width="938" height="768" alt="image" src="https://github.com/user-attachments/assets/08490ae3-7f67-49cc-b17f-53f9271cbf66" />
-
-En esta captura hicimos la creación de las ramas siguiendo el modelo GitFlow y el uso de Conventional Commits (feat, fix) para mantener la trazabilidad del desarrollo del juego 2D.
-
-### Justificación Técnica:
-Se eligió GitFlow porque el proyecto requiere una separación clara entre el código en desarrollo y el código estable. Al trabajar en parejas, esta estrategia permite aislar funcionalidades en ramas `feature/` y manejar correcciones de errores en ramas `hotfix/`.
-
-## 3. Guía de Buenas Prácticas
-
-### Mensajes de Commit (Conventional Commits)
-Seguimos el estándar para mantener un historial de cambios legible:
-- `feat:` para nuevas funcionalidades (ej: agregar movimiento).
-- `fix:` para corrección de errores (ej: corregir colisiones).
-- `docs:` cambios en la documentación.
-
-### Estructura del Proyecto
-- `src/main/`: Contiene el código fuente (`Main.java`, `Panel.java`, `KeyHand.java`).
-- `bin/`: Archivos compilados `.class`.
-- `.github/workflows/`: Configuración de la automatización.
-
-## 3. Guía de Buenas Prácticas
-
-### Mensajes de Commit (Conventional Commits)
-Seguimos el estándar para mantener un historial de cambios legible:
-- `feat:` para nuevas funcionalidades (ej: agregar movimiento).
-- `fix:` para corrección de errores (ej: corregir colisiones).
-- `docs:` cambios en la documentación.
-
-### Estructura del Proyecto
-- `src/main/`: Contiene el código fuente (`Main.java`, `Panel.java`, `KeyHand.java`).
-- `bin/`: Archivos compilados `.class`.
-- `.github/workflows/`: Configuración de la automatización.
+**Tecnologías:** Java (Swing/AWT), Maven, Docker, Docker Compose, GitHub Actions, Snyk, JaCoCo.
 
 ---
 
-## 4. Automatización con GitHub Actions (CI)
-Se implementó un pipeline de Integración Continua (`main.yml`) que automatiza la compilación del código Java.
+## 2. Estrategia de Ramificación: GitFlow
+Se mantiene el modelo de trabajo **GitFlow** para gestionar el ciclo de vida del desarrollo.
+
+### Justificación Técnica:
+Se eligió GitFlow porque permite separar claramente el código en desarrollo del código estable. Las ramas `feature/` aíslan funcionalidades y las ramas `hotfix/` permiten correcciones urgentes sin afectar la rama principal.
+
+---
+
+## 3. Estructura del Proyecto
+- `src/main/java/main/`: Código fuente (`Main.java`, `Panel.java`, `KeyHand.java`).
+- `test/main/`: Pruebas unitarias (`KeyHandTest.java`).
+- `Dockerfile`: Imagen Docker multi-stage del microservicio.
+- `docker-compose.yml`: Orquestación de contenedores con límites de recursos.
+- `.github/workflows/ci-cd.yml`: Pipeline CI/CD unificado.
+- `.github/dependabot.yml`: Escaneo automático semanal de dependencias.
+
+---
+
+## 4. Pipeline CI/CD Unificado
+
+Se implementó un pipeline unificado (`ci-cd.yml`) en GitHub Actions que automatiza completamente el ciclo de vida del microservicio.
 
 **Disparadores:**
-- **Push en `develop`:** Valida la estabilidad de la rama de integración.
-- **Pull Request hacia `main`:** Filtro de calidad antes de pasar a producción.
+- **Push en `master` o `main`:** Ejecuta el pipeline completo.
+- **Pull Request hacia `master` o `main`:** Filtro de calidad antes de pasar a producción.
 
 **Pasos del Pipeline:**
 1. Checkout del código.
-2. Configuración de JDK 17.
-3. Compilación de archivos `.java` mediante `javac`.
+2. Configuración de Docker Buildx.
+3. Configuración de JDK 17.
+4. Cache de dependencias Maven.
+5. **Construcción de imagen Docker (IE1):** `docker compose build`.
+6. **Pruebas unitarias con JaCoCo (IE2):** `mvn clean verify`, genera reporte de cobertura.
+7. **Análisis de vulnerabilidades con Snyk (IE3):** Escaneo de dependencias Maven.
+8. **Análisis de calidad con SonarCloud (IE3):** Análisis estático del código.
+9. **Despliegue simulado con Docker Compose (IE4 + IE5):** Levanta, verifica y apaga el entorno.
 
 ---
 
-## 5. Declaración de Uso de IA
-Se utilizó **IA (Gemini/Claude)** para:
+## 5. Trazabilidad y Calidad
+
+| Etapa | Herramienta | Garantía |
+|---|---|---|
+| Build | Docker + Maven | Imagen construida desde código fuente |
+| Tests | JUnit 5 + JaCoCo | Reporte de cobertura por ejecución |
+| Seguridad | Snyk + Dependabot | Detección de vulnerabilidades en dependencias |
+| Calidad | SonarCloud | Análisis estático del código |
+| Deploy | Docker Compose | Entorno orquestado con healthcheck |
+
+Cada ejecución del pipeline queda registrada en GitHub Actions con su SHA de commit, permitiendo rastrear exactamente qué código fue desplegado y en qué estado pasó cada etapa.
+
+---
+
+## 6. Orquestación de Contenedores (IE5)
+
+El archivo `docker-compose.yml` define la orquestación:
+- **`db`**: MySQL 8.0 con healthcheck activo.
+- **`juegazo-app`**: Imagen construida desde Dockerfile multi-stage, con límites de recursos (`0.5 CPU`, `512MB RAM`).
+- La dependencia `depends_on` con `condition: service_healthy` garantiza el orden correcto de arranque.
+
+---
+
+## 7. Declaración de Uso de IA
+Se utilizó **IA (Claude)** para:
 - Estructurar la documentación técnica del README.
-- Validar la sintaxis del archivo YAML para el pipeline.
-- Generar ejemplos de comandos Git para el flujo de trabajo.
+- Validar la sintaxis del archivo YAML del pipeline.
+- Revisar el Dockerfile y docker-compose.yml.
+
+Todas las decisiones técnicas fueron revisadas y validadas por el equipo.
 
 ---
 
-Automatización con GitHub Actions (CI)
-"Para garantizar la calidad del software, se configuró un pipeline de Integración Continua que se dispara automáticamente ante cada push en la rama develop. El pipeline realiza las siguientes tareas: checkout del código, configuración del entorno Java JDK 17 y la compilación de los archivos fuente."
-
-<img width="887" height="727" alt="Captura de pantalla 2026-04-14 181327" src="https://github.com/user-attachments/assets/9bfaa4d3-3d2b-46fa-b3a0-3d57200ed8f7" />
-
-La imagen superior muestra el flujo de trabajo denominado Pipeline_EP1_DevOps ejecutado con éxito. El check verde confirma que el código presente en el repositorio es estable y compila correctamente bajo los estándares definidos en el archivo main.yml
-
-## 6. Reflexión Individual
+## 8. Reflexión Individual
 
 ### [NATHAN GUTIERREZ]:
-"Durante esta actividad, comprendí la importancia de GitFlow para mantener el orden. El uso de ramas permite fallar y corregir sin afectar al usuario final en la rama main. La automatización con GitHub Actions es clave para asegurar que el código siempre compile."
+*Lo más complejo y de valor por asi decirlo de esta EP2 fue aprender a resolver problemas bajo presión. Al principio el pipeline en GitHub Actions fallaba por errores del compilador en la nube y por rutas de carpetas mal mapeadas, pero pasar todo a Docker pude entender mas de DevOps: asegurar que el código funcione igual en mi PC que en un servidor. Configurar Snyk para seguridad y Docker Compose para limitar los recursos me dio una visión real de cómo se despliega software hoy en día en la industria.*
 
 ### [CRISTOBAL REYES]:
-"Mi participación se centró en la lógica del videojuego y la organización del repositorio bajo el modelo GitFlow y Lograr que el pipeline de GitHub Actions compilara correctamente nuestro código en Java fue el mayor desafío y aprendizaje de esta etapa.."
+*Este proyecto me enseñó que la Integración Continua (CI/CD) es un ayuda y no un error. Integrar JaCoCo para pruebas y Snyk para buscar vulnerabilidades deja en claro que la seguridad se automatiza desde el primer momento que pruebas todo. Aunque nos costó adaptar el juego a los contenedores por compatibilidad, lograr la orquestación con Docker Compose limitando la CPU y memoria según la rúbrica fue clave para entender la gobernanza de TI real.*
