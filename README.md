@@ -78,6 +78,10 @@ Se utilizó **IA (Claude)** para:
 
 Todas las decisiones técnicas fueron revisadas y validadas por el equipo.
 
+
+EVIDENCIAS DEL PIPELINE 
+<img width="1421" height="425" alt="image" src="https://github.com/user-attachments/assets/840f60e4-fae5-4945-af71-2ec68fad159a" />
+
 ---
 
 ## 8. Reflexión Individual
