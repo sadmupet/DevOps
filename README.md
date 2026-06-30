@@ -1,93 +1,52 @@
-# DevOps
-# EP2: Añadiéndole complejidad a nuestro pipeline
+# 🚀 Proyecto Microservicio Juego 2D - Ingeniería DevOps (EP3)
 
-## 1. Descripción del Proyecto
-Este repositorio contiene un **Videojuego 2D desarrollado en Java**, extendido con un pipeline CI/CD completo que automatiza la integración, pruebas, análisis de seguridad y despliegue del microservicio mediante contenedores.
+## 📌 # EP3: Añadiéndole complejidad a nuestro pipeline
 
-**Tecnologías:** Java (Swing/AWT), Maven, Docker, Docker Compose, GitHub Actions, Snyk, JaCoCo.
+En esta tercera evaluación parcial (**EP3**), el proyecto evoluciona desde un entorno de contenedores locales hacia una arquitectura cloud avanzada bajo un enfoque de **DevSecOps con Observabilidad Cloud** y **Gobernanza de Mallas de Servicios (Service Mesh)**, alineada con los estándares de Amazon Web Services (AWS) e Istio.
 
----
-
-## 2. Estrategia de Ramificación: GitFlow
-Se mantiene el modelo de trabajo **GitFlow** para gestionar el ciclo de vida del desarrollo.
-
-### Justificación Técnica:
-Se eligió GitFlow porque permite separar claramente el código en desarrollo del código estable. Las ramas `feature/` aíslan funcionalidades y las ramas `hotfix/` permiten correcciones urgentes sin afectar la rama principal.
+El pipeline de CI/CD actúa como un **gatekeeper automatizado** que restringe, valida, orquesta y prepara la infraestructura para un entorno altamente disponible y monitoreado proactivamente.
 
 ---
 
-## 3. Estructura del Proyecto
-- `src/main/java/main/`: Código fuente (`Main.java`, `Panel.java`, `KeyHand.java`).
-- `test/main/`: Pruebas unitarias (`KeyHandTest.java`).
-- `Dockerfile`: Imagen Docker multi-stage del microservicio.
-- `docker-compose.yml`: Orquestación de contenedores con límites de recursos.
-- `.github/workflows/ci-cd.yml`: Pipeline CI/CD unificado.
-- `.github/dependabot.yml`: Escaneo automático semanal de dependencias.
+## 🛠️ Arquitectura de la Solución (Ecosistema Cloud)
+
+El ecosistema de monitoreo y despliegue está diseñado bajo los pilares fundamentales oficiales de la unidad:
+
+* **Observabilidad en la Nube (Amazon CloudWatch):** Captura de métricas de infraestructura (CPU y Memoria RAM) mediante el agente de CloudWatch configurado a través de AWS Systems Manager (SSM).
+* **Alertas Proactivas (AWS SNS):** Umbrales automatizados en CloudWatch que gatillan notificaciones inmediatas mediante un tópico de AWS Simple Notification Service ante sobrecargas en el microservicio.
+* **Malla de Servicios (Istio Service Mesh):** Implementación sobre un clúster de Amazon EKS para gestionar la comunicación interna, el balanceo de tráfico y la seguridad mediante proxies sidecar (Envoy).
+* **Monitoreo Visual de Microservicios (Kiali):** Capa de observabilidad gráfica sobre Istio para analizar la topología de la red, flujos de tráfico y tasa de errores HTTP en tiempo real.
 
 ---
 
-## 4. Pipeline CI/CD Unificado
+## 🏗️ Componentes Técnicos del Repositorio
 
-Se implementó un pipeline unificado (`ci-cd.yml`) en GitHub Actions que automatiza completamente el ciclo de vida del microservicio.
+### 1. Pipeline CI/CD con Bloqueo Crítico (`.github/workflows/ci-cd.yml`)
+* **Mecanismo Fail-Fast:** Incorpora una fase de auditoría estática. Si el motor de validación detecta malas prácticas o la etiqueta crítica `FIXME` en el código fuente, el pipeline se detiene de inmediato (`exit 1`), deteniendo el empaquetamiento para proteger el entorno en la nube.
 
-**Disparadores:**
-- **Push en `master` o `main`:** Ejecuta el pipeline completo.
-- **Pull Request hacia `master` o `main`:** Filtro de calidad antes de pasar a producción.
+### 2. Configuración de Monitoreo Cloud (`/monitoring`)
+* **`cloudwatch-agent-config.json`:** Archivo de configuración que define las dimensiones y métricas personalizadas a recolectar (como `cpu_usage_active` y `mem_used_percent`) con intervalos de recolección de 60 segundos mediante el agente unificado de CloudWatch.
+* **`cloudwatch-alerts.json`:** Definición de una alarma automatizada que se activa cuando el uso medio de CPU supera el 80% en un período de 5 minutos, enviando la alerta al ARN de un tópico en **AWS SNS**.
 
-**Pasos del Pipeline:**
-1. Checkout del código.
-2. Configuración de Docker Buildx.
-3. Configuración de JDK 17.
-4. Cache de dependencias Maven.
-5. **Construcción de imagen Docker (IE1):** `docker compose build`.
-6. **Pruebas unitarias con JaCoCo (IE2):** `mvn clean verify`, genera reporte de cobertura.
-7. **Análisis de vulnerabilidades con Snyk (IE3):** Escaneo de dependencias Maven.
-8. **Análisis de calidad con SonarCloud (IE3):** Análisis estático del código.
-9. **Despliegue simulado con Docker Compose (IE4 + IE5):** Levanta, verifica y apaga el entorno.
+### 3. Manifiestos de Orquestación e Inyección Istio (`/k8s`)
+* **`deployment.yaml`:** Define el despliegue del microservicio en el namespace `devops-ep3` incorporando la etiqueta obligatoria `istio-injection: enabled`. Esto automatiza la inserción del proxy sidecar Envoy para que Istio y Kiali capturen el flujo. Estructura el software con **2 réplicas** y límites de hardware de `512Mi` de memoria RAM y `500m` de CPU.
+* **`service.yaml`:** Expone el juego internamente a la malla mediante un `ClusterIP` en el puerto `8080`.
 
 ---
 
-## 5. Trazabilidad y Calidad
+## 📊 Impacto en la Toma de Decisiones Técnicas
 
-| Etapa | Herramienta | Garantía |
-|---|---|---|
-| Build | Docker + Maven | Imagen construida desde código fuente |
-| Tests | JUnit 5 + JaCoCo | Reporte de cobertura por ejecución |
-| Seguridad | Snyk + Dependabot | Detección de vulnerabilidades en dependencias |
-| Calidad | SonarCloud | Análisis estático del código |
-| Deploy | Docker Compose | Entorno orquestado con healthcheck |
-
-Cada ejecución del pipeline queda registrada en GitHub Actions con su SHA de commit, permitiendo rastrear exactamente qué código fue desplegado y en qué estado pasó cada etapa.
+La adopción de telemetría e infraestructura cloud permite al equipo de operaciones DevOps tomar decisiones basadas en datos empíricos:
+1. **Políticas de Auto-Scaling (CloudWatch + SNS):** Al gatillarse alertas de CPU excedido por notificaciones SMS o de correo de AWS SNS, el equipo puede programar políticas automáticas de escalado en Amazon EKS para levantar más réplicas y estabilizar el sistema.
+2. **Optimización de Tráfico (Istio + Kiali):** A través del mapa topológico de Kiali, el equipo puede visualizar cuellos de botella en la comunicación entre pods o incrementos en las respuestas HTTP de error (códigos 5xx), aislando fallas en versiones específicas de la app mediante reglas de enrutamiento.
 
 ---
 
-## 6. Orquestación de Contenedores (IE5)
+## 🤖 Declaración de Uso Ético de Inteligencia Artificial
 
-El archivo `docker-compose.yml` define la orquestación:
-- **`db`**: MySQL 8.0 con healthcheck activo.
-- **`juegazo-app`**: Imagen construida desde Dockerfile multi-stage, con límites de recursos (`0.5 CPU`, `512MB RAM`).
-- La dependencia `depends_on` con `condition: service_healthy` garantiza el orden correcto de arranque.
+Cumpliendo con las normativas académicas de Duoc UC, se declara el uso asistido de herramientas de IA:
 
----
+| Herramienta de IA | Forma de Aplicación en el Proyecto | Validación e Inspección del Equipo |
+| :--- | :--- | :--- |
+| **Modelos de Lenguaje** | Apoyo en la sintaxis de las directrices JSON del agente unificado de CloudWatch y validación de las etiquetas de inyección de Istio en Kubernetes. | El equipo auditó manualmente que los parámetros, recursos máximos de hardware (512MB RAM) y tópicos ARN se adaptaran fielmente a las especificaciones de la rúbrica. |
 
-## 7. Declaración de Uso de IA
-Se utilizó **IA (Claude)** para:
-- Estructurar la documentación técnica del README.
-- Validar la sintaxis del archivo YAML del pipeline.
-- Revisar el Dockerfile y docker-compose.yml.
-
-Todas las decisiones técnicas fueron revisadas y validadas por el equipo.
-
-EVIDENCIAS DEL PIPELINE
-<img width="1421" height="425" alt="Captura de pantalla 2026-05-26 181318" src="https://github.com/user-attachments/assets/d93f4dc1-fa6b-4f42-bf09-dee55b3f23bf" />
-
-
----
-
-## 8. Reflexión Individual
-
-### [NATHAN GUTIERREZ]:
-*Lo más complejo y de valor por asi decirlo de esta EP2 fue aprender a resolver problemas bajo presión. Al principio el pipeline en GitHub Actions fallaba por errores del compilador en la nube y por rutas de carpetas mal mapeadas, pero pasar todo a Docker pude entender mas de DevOps: asegurar que el código funcione igual en mi PC que en un servidor. Configurar Snyk para seguridad y Docker Compose para limitar los recursos me dio una visión real de cómo se despliega software hoy en día en la industria.*
-
-### [CRISTOBAL REYES]:
-*Este proyecto me enseñó que la Integración Continua (CI/CD) es un ayuda y no un error. Integrar JaCoCo para pruebas y Snyk para buscar vulnerabilidades deja en claro que la seguridad se automatiza desde el primer momento que pruebas todo. Aunque nos costó adaptar el juego a los contenedores por compatibilidad, lograr la orquestación con Docker Compose limitando la CPU y memoria según la rúbrica fue clave para entender la gobernanza de TI real.*
