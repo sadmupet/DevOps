@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  juego-2d:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: contenedor_juego2d
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M

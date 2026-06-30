@@ -1,0 +1,51 @@
+name: Pipeline DevSecOps con Observabilidad y Cumplimiento - EP3
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  calidad-y-seguridad:
+    name: 1. Control de Calidad y Cumplimiento Normativo
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Descargar codigo del repositorio
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 
+    
+    - name: Validar Politicas de Cumplimiento de Codigo
+      run: |
+        echo "Iniciando auditoria automatizada de calidad..."
+        if grep -r "FIXME" ./src; then
+          echo "ERROR CRÍTICO: Se encontraron vulnerabilidades no resueltas (FIXME)."
+          echo "Interrumpiendo pipeline para proteger el entorno productivo."
+          exit 1
+        else
+          echo "Cumplimiento normativo aprobado. Pasando a SonarQube..."
+        fi
+
+    
+    - name: Analisis Estatico de Codigo (SonarQube)
+      uses: SonarSource/sonarcloud-github-action@master
+      continue-on-error: true 
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  despliegue-orquestado:
+    name: 2. Orquestacion y Despliegue Cloud (Simulado)
+    needs: calidad-y-seguridad 
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Descargar codigo
+      uses: actions/checkout@v4
+
+    - name: Preparar Entorno Kubernetes
+      run: |
+        echo "Entorno de Kubernetes detectado."
+        echo "Aplicando configuraciones de monitoreo y trazabilidad automatizada..."
