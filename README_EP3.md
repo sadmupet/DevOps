@@ -2,58 +2,51 @@
 
 ## 📌 # EP3: Añadiéndole complejidad a nuestro pipeline
 
-En esta tercera evaluación parcial (**EP3**), el proyecto da un salto cualitativo al transicionar de un empaquetamiento básico en contenedores aislados hacia una arquitectura avanzada basada en **DevSecOps con Observabilidad Cloud** y **Gobernanza TI automatizada**. 
+En esta tercera evaluación parcial (**EP3**), el proyecto evoluciona desde un entorno de contenedores locales hacia una arquitectura cloud avanzada bajo un enfoque de **DevSecOps con Observabilidad Cloud** y **Gobernanza de Mallas de Servicios (Service Mesh)**, alineada con los estándares de Amazon Web Services (AWS) e Istio.
 
-El pipeline de CI/CD ya no solo actúa como un integrador de código, sino como un **gatekeeper (salvavidas automatizado)** que restringe, valida, orquesta en Kubernetes y monitorea proactivamente la salud de la infraestructura ante cualquier despliegue simulado en producción.
+El pipeline de CI/CD actúa como un **gatekeeper automatizado** que restringe, valida, orquesta y prepara la infraestructura para un entorno altamente disponible y monitoreado proactivamente.
 
 ---
 
-## 🛠️ Arquitectura de la Solución
+## 🛠️ Arquitectura de la Solución (Ecosistema Cloud)
 
-El ecosistema de esta entrega está diseñado bajo tres pilares fundamentales exigidos por la rúbrica de Duoc UC:
+El ecosistema de monitoreo y despliegue está diseñado bajo los pilares fundamentales oficiales de la unidad:
 
-* **Orquestación y Alta Disponibilidad (IE2):** Migración completa desde entornos locales hacia manifiestos nativos de **Kubernetes (K8s)** para despliegues dinámicos.
-* **Monitoreo, Telemetría y Logging (IE1 / IE3):** Captura proactiva de datos mediante un agente de **Prometheus** y visualización mediante un Dashboard centralizado en **Grafana**.
-* **Políticas de Cumplimiento y Fail-Fast (IE5 / IE6):** Mecanismos automatizados de auditoría estática de código que interrumpen el flujo en seco si se detectan anomalías de seguridad o calidad.
+* **Observabilidad en la Nube (Amazon CloudWatch):** Captura de métricas de infraestructura (CPU y Memoria RAM) mediante el agente de CloudWatch configurado a través de AWS Systems Manager (SSM).
+* **Alertas Proactivas (AWS SNS):** Umbrales automatizados en CloudWatch que gatillan notificaciones inmediatas mediante un tópico de AWS Simple Notification Service ante sobrecargas en el microservicio.
+* **Malla de Servicios (Istio Service Mesh):** Implementación sobre un clúster de Amazon EKS para gestionar la comunicación interna, el balanceo de tráfico y la seguridad mediante proxies sidecar (Envoy).
+* **Monitoreo Visual de Microservicios (Kiali):** Capa de observabilidad gráfica sobre Istio para analizar la topología de la red, flujos de tráfico y tasa de errores HTTP en tiempo real.
 
 ---
 
 ## 🏗️ Componentes Técnicos del Repositorio
 
-El proyecto incluye los archivos y configuraciones clave solicitados por la pauta específica de evaluación:
-
 ### 1. Pipeline CI/CD con Bloqueo Crítico (`.github/workflows/ci-cd.yml`)
-* **Control de Calidad (IE5):** Incorpora una fase de auditoría que escanea el código en busca de malas prácticas, deuda técnica o vulnerabilidades.
-* **Mecanismo Fail-Fast (IE6):** Si el motor de validación detecta la etiqueta crítica `FIXME` en los componentes de código fuente (`./src`), el pipeline **se detiene de manera inmediata**, retornando un código de error `exit 1` y congelando las etapas subsecuentes para blindar el entorno productivo.
+* **Mecanismo Fail-Fast:** Incorpora una fase de auditoría estática. Si el motor de validación detecta malas prácticas o la etiqueta crítica `FIXME` en el código fuente, el pipeline se detiene de inmediato (`exit 1`), deteniendo el empaquetamiento para proteger el entorno en la nube.
 
-### 2. Manifiestos de Orquestación Cloud (`/k8s`)
-* **`deployment.yaml` (IE2):** Define el estado deseado de la aplicación levantando **2 réplicas (Pods)** simultáneas para asegurar tolerancia a fallos. Incorpora políticas estrictas de restricción de hardware:
-    * `limits`: CPU máxima de `500m` (0.5 núcleos) y Memoria RAM máxima de `512Mi`.
-    * `requests`: Reserva inicial de `250m` de CPU y `256Mi` de RAM.
-    * **Anotaciones de Monitoreo:** Inyecta metadatos nativos para el auto-descubrimiento de Prometheus (`prometheus.io/scrape: "true"`).
-* **`service.yaml`:** Abstrae el acceso a los pods mediante una IP interna estable (`ClusterIP`) balanceando el tráfico en el puerto `8080`.
+### 2. Configuración de Monitoreo Cloud (`/monitoring`)
+* **`cloudwatch-agent-config.json`:** Archivo de configuración que define las dimensiones y métricas personalizadas a recolectar (como `cpu_usage_active` y `mem_used_percent`) con intervalos de recolección de 60 segundos mediante el agente unificado de CloudWatch.
+* **`cloudwatch-alerts.json`:** Definición de una alarma automatizada que se activa cuando el uso medio de CPU supera el 80% en un período de 5 minutos, enviando la alerta al ARN de un tópico en **AWS SNS**.
 
-### 3. Configuración de Observabilidad y Dashboards (`/monitoring`)
-* **`prometheus.yml` (IE1):** Archivo de gobernanza del servidor de monitoreo configurado para realizar el raspado (*scraping*) automatizado de métricas sobre el clúster de Kubernetes en intervalos estrictos de 15 segundos.
-* **`dashboard-config.json` (IE3):** Configuración declarativa (Infrastructure as Code) del panel de **Grafana**. Mapea gráficamente las tres métricas clave esenciales para la toma de decisiones:
-    1.  *Consumo de CPU por Pod* frente al límite de 0.5.
-    2.  *Uso de Memoria RAM activa* en comparación con el umbral de 512MB.
-    3.  *Tasa de Disponibilidad y Errores HTTP (Códigos 5xx)* para detección temprana de anomalías.
+### 3. Manifiestos de Orquestación e Inyección Istio (`/k8s`)
+* **`deployment.yaml`:** Define el despliegue del microservicio en el namespace `devops-ep3` incorporando la etiqueta obligatoria `istio-injection: enabled`. Esto automatiza la inserción del proxy sidecar Envoy para que Istio y Kiali capturen el flujo. Estructura el software con **2 réplicas** y límites de hardware de `512Mi` de memoria RAM y `500m` de CPU.
+* **`service.yaml`:** Expone el juego internamente a la malla mediante un `ClusterIP` en el puerto `8080`.
 
 ---
 
-## 📊 Impacto en la Toma de Decisiones Técnicas (IE4)
+## 📊 Impacto en la Toma de Decisiones Técnicas
 
-La implementación de este ecosistema de observabilidad permite al equipo de ingeniería mitigar riesgos operativos mediante métricas empíricas:
-1.  **Escalabilidad Horizontal Basada en Datos:** Si el panel de Grafana indica que el uso de memoria RAM por Pod supera reiteradamente el 85% del límite asignado (`512Mi`), se toma la decisión técnica informada de realizar un escalado horizontal modificando el parámetro `replicas` a 3 o 4 instancias.
-2.  **Gobernanza Operacional de Errores:** El monitoreo en tiempo real de la tasa de fallas HTTP (5xx) gatilla alarmas que permiten al equipo de operaciones aplicar rollbacks inmediatos o parches calientes antes de comprometer la experiencia global del usuario.
+La adopción de telemetría e infraestructura cloud permite al equipo de operaciones DevOps tomar decisiones basadas en datos empíricos:
+1. **Políticas de Auto-Scaling (CloudWatch + SNS):** Al gatillarse alertas de CPU excedido por notificaciones SMS o de correo de AWS SNS, el equipo puede programar políticas automáticas de escalado en Amazon EKS para levantar más réplicas y estabilizar el sistema.
+2. **Optimización de Tráfico (Istio + Kiali):** A través del mapa topológico de Kiali, el equipo puede visualizar cuellos de botella en la comunicación entre pods o incrementos en las respuestas HTTP de error (códigos 5xx), aislando fallas en versiones específicas de la app mediante reglas de enrutamiento.
 
 ---
 
 ## 🤖 Declaración de Uso Ético de Inteligencia Artificial
 
-Dando estricto cumplimiento a la normativa de honestidad académica estipulada en la página 3 de la pauta de Duoc UC, el equipo declara formalmente el uso de herramientas de asistencia técnica bajo el siguiente desglose:
+Cumpliendo con las normativas académicas de Duoc UC, se declara el uso asistido de herramientas de IA:
 
 | Herramienta de IA | Forma de Aplicación en el Proyecto | Validación e Inspección del Equipo |
 | :--- | :--- | :--- |
-| **Modelos de Lenguaje Avanzados** | Soporte técnico en el diseño de sintaxis de los manifiestos YAML de Kubernetes y estructuración de los arreglos JSON de Grafana. | El equipo auditó manualmente cada línea de código, garantizando que los puertos (`8080`), namespaces y límites de hardware (`512Mi` / `500m`) respondan fielmente a los requerimientos de la rúbrica. |
+| **Modelos de Lenguaje** | Apoyo en la sintaxis de las directrices JSON del agente unificado de CloudWatch y validación de las etiquetas de inyección de Istio en Kubernetes. | El equipo auditó manualmente que los parámetros, recursos máximos de hardware (512MB RAM) y tópicos ARN se adaptaran fielmente a las especificaciones de la rúbrica. |
+
