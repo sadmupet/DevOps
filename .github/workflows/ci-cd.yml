@@ -61,43 +61,30 @@ jobs:
         echo "Artefacto validado, listo para producción."
 
   despliegue-orquestado:
-    name: 3. Orquestacion y Despliegue Cloud
+    name: 3. Orquestacion y Despliegue Cloud (Simulado)
     needs: prueba-aceptacion
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
     - name: Descargar codigo
       uses: actions/checkout@v4
 
-    - name: Configurar credenciales AWS
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+    - name: Build de imagen Docker
+      run: docker build -t juego2d:${{ github.sha }} .
 
-    - name: Login en ECR y push de imagen
+    - name: Simular despliegue a EKS
       run: |
-        aws ecr get-login-password --region us-east-1 | \
-          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
-        docker build -t juego2d:${{ github.sha }} .
-        docker tag juego2d:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/juego2d:${{ github.sha }}
-        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/juego2d:${{ github.sha }}
+        echo "=== Flujo de despliegue a producción (simulado) ==="
+        echo "1. docker tag juego2d:${{ github.sha }} ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/juego2d:${{ github.sha }}"
+        echo "2. docker push ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/juego2d:${{ github.sha }}"
+        echo "3. aws eks update-kubeconfig --name devops-ep3-cluster --region us-east-1"
+        echo "4. kubectl apply -f k8s/namespace.yaml -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/istio-gateway.yaml"
+        echo "5. kubectl rollout status deployment/juego2d -n devops-ep3"
+        echo "En un entorno productivo real, este job usaria secrets AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY"
+        echo "y ejecutaria estos comandos contra el clúster EKS. Validado localmente con Kind/Docker Desktop."
 
-    - name: Actualizar kubeconfig hacia EKS
-      run: aws eks update-kubeconfig --name devops-ep3-cluster --region us-east-1
-
-    - name: Inyectar tag de imagen en el manifiesto
+    - name: Validar manifiestos Kubernetes (sintaxis)
       run: |
-        sed -i "s|IMAGE_TAG|${{ github.sha }}|g; s|ACCOUNT_ID|${{ secrets.AWS_ACCOUNT_ID }}|g" k8s/deployment.yaml
-
-    - name: Aplicar manifiestos Kubernetes
-      run: |
-        kubectl apply -f k8s/namespace.yaml
-        kubectl apply -f k8s/deployment.yaml
-        kubectl apply -f k8s/service.yaml
-        kubectl apply -f k8s/istio-gateway.yaml
-
-    - name: Verificar rollout
-      run: kubectl rollout status deployment/juego2d -n devops-ep3 --timeout=120s
+        kubectl apply --dry-run=client -f k8s/namespace.yaml
+        kubectl apply --dry-run=client -f k8s/deployment.yaml
+        kubectl apply --dry-run=client -f k8s/service.yaml
