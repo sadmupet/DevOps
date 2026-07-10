@@ -72,7 +72,7 @@ Se utilizó Claude (Anthropic) como apoyo en la sintaxis de manifiestos Kubernet
 
 ## Equipo
 
-Nathan Gutierrez, Cristobal Reyes, Allan Nunez, Cris
+Cristobal Reyes, Nathan Gutierrez
 
 ## Ejecución local
 
