@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: juego2d
-          #image: ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/juego2d:IMAGE_TAG
+          image: ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/juego2d:IMAGE_TAG
           ports:
             - containerPort: 8080
           resources:
