@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: juego2d
+  namespace: devops-ep3
+  labels:
+    app: juego2d
+spec:
+  replicas: 2                    
+  selector:
+    matchLabels:
+      app: juego2d
+  template:
+    metadata:
+      labels:
+        app: juego2d
+        version: v1               
+    spec:
+      containers:
+        - name: juego2d
+          #image: ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/juego2d:IMAGE_TAG
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"          
+              memory: "512Mi"      

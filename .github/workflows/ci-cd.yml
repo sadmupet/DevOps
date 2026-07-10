@@ -1,0 +1,103 @@
+name: Pipeline DevSecOps con Observabilidad y Cumplimiento - EP3
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  calidad-y-seguridad:
+    name: 1. Control de Calidad y Cumplimiento Normativo
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Descargar codigo del repositorio
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Validar Politicas de Cumplimiento de Codigo
+      run: |
+        echo "Iniciando auditoria automatizada de calidad..."
+        if grep -r "FIXME" ./src; then
+          echo "ERROR CRÍTICO: Se encontraron vulnerabilidades no resueltas (FIXME)."
+          echo "Interrumpiendo pipeline para proteger el entorno productivo."
+          exit 1
+        else
+          echo "Cumplimiento normativo aprobado. Pasando a SonarQube..."
+        fi
+
+    - name: Analisis Estatico de Codigo (SonarQube)
+      uses: SonarSource/sonarcloud-github-action@master
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  prueba-aceptacion:
+    name: 2. Prueba de Aceptacion Pre-Despliegue
+    needs: calidad-y-seguridad
+    runs-on: ubuntu-latest
+    steps:
+    - name: Descargar codigo
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Build + pruebas unitarias como gate de aceptacion
+      run: mvn -B clean verify
+
+    - name: Validar que el artefacto se generó correctamente
+      run: |
+        if [ ! -f target/juego2d-1.0-SNAPSHOT.jar ]; then
+          echo "ERROR: el .jar no se generó. Bloqueando despliegue."
+          exit 1
+        fi
+        echo "Artefacto validado, listo para producción."
+
+  despliegue-orquestado:
+    name: 3. Orquestacion y Despliegue Cloud
+    needs: prueba-aceptacion
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Descargar codigo
+      uses: actions/checkout@v4
+
+    - name: Configurar credenciales AWS
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Login en ECR y push de imagen
+      run: |
+        aws ecr get-login-password --region us-east-1 | \
+          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+        docker build -t juego2d:${{ github.sha }} .
+        docker tag juego2d:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/juego2d:${{ github.sha }}
+        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/juego2d:${{ github.sha }}
+
+    - name: Actualizar kubeconfig hacia EKS
+      run: aws eks update-kubeconfig --name devops-ep3-cluster --region us-east-1
+
+    - name: Inyectar tag de imagen en el manifiesto
+      run: |
+        sed -i "s|IMAGE_TAG|${{ github.sha }}|g; s|ACCOUNT_ID|${{ secrets.AWS_ACCOUNT_ID }}|g" k8s/deployment.yaml
+
+    - name: Aplicar manifiestos Kubernetes
+      run: |
+        kubectl apply -f k8s/namespace.yaml
+        kubectl apply -f k8s/deployment.yaml
+        kubectl apply -f k8s/service.yaml
+        kubectl apply -f k8s/istio-gateway.yaml
+
+    - name: Verificar rollout
+      run: kubectl rollout status deployment/juego2d -n devops-ep3 --timeout=120s

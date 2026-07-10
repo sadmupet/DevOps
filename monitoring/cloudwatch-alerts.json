@@ -1,0 +1,12 @@
+{
+  "AlarmName": "juego2d-cpu-alta",
+  "MetricName": "cpu_usage_active",
+  "Namespace": "DevOpsEP3/Juego2D",
+  "Statistic": "Average",
+  "Period": 300,
+  "EvaluationPeriods": 1,
+  "Threshold": 80,
+  "ComparisonOperator": "GreaterThanThreshold",
+  "AlarmActions": ["arn:aws:sns:us-east-1:ACCOUNT_ID:juego2d-alertas"],
+  "TreatMissingData": "notBreaching"
+}
