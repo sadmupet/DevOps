@@ -1,0 +1,4 @@
+istio-1.22.0/
+istio.zip
+target/
+*.class
