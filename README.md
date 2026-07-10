@@ -33,6 +33,8 @@ El ecosistema de monitoreo y despliegue está diseñado bajo los pilares fundame
 * **`service.yaml`:** Expone el juego internamente a la malla mediante un `ClusterIP` en el puerto `8080`.
 
 ---
+<img width="1279" height="299" alt="image" src="https://github.com/user-attachments/assets/519370f3-0324-4c24-89b9-80683543b984" />
+
 
 ## 📊 Impacto en la Toma de Decisiones Técnicas
 
