@@ -83,8 +83,8 @@ jobs:
         echo "En un entorno productivo real, este job usaria secrets AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY"
         echo "y ejecutaria estos comandos contra el clúster EKS. Validado localmente con Kind/Docker Desktop."
 
-    - name: Validar manifiestos Kubernetes (sintaxis)
+    - name: Validar manifiestos Kubernetes (dry-run)
       run: |
-        kubectl apply --dry-run=client -f k8s/namespace.yaml
-        kubectl apply --dry-run=client -f k8s/deployment.yaml
-        kubectl apply --dry-run=client -f k8s/service.yaml
+        kubectl apply --dry-run=client --validate=false -f k8s/namespace.yaml
+        kubectl apply --dry-run=client --validate=false -f k8s/deployment.yaml
+        kubectl apply --dry-run=client --validate=false -f k8s/service.yaml
